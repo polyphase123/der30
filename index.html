@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interactive Distributed Energy Resources (DER) Simulator and Regulatory Economics Dashboard for MERALCO franchise.">
+    <title>MERALCO Distributed Energy Resources (DER) Web Simulator</title>
+    
+    <!-- Premium Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* CSS Core variables for Clean White UI Theme */
+        :root {
+            --bg-body: #F8FAFC;
+            --bg-card: #FFFFFF;
+            --text-primary: #0F172A;
+            --text-secondary: #475569;
+            --text-muted: #64748B;
+            --border-color: #E2E8F0;
+            --border-hover: #CBD5E1;
+            
+            --orange-primary: #EA580C;
+            --orange-light: #FFF7ED;
+            --orange-border: #FDBA74;
+            
+            --green-primary: #10B981;
+            --green-light: #ECFDF5;
+            --green-border: #A7F3D0;
+            
+            --red-primary: #EF4444;
+            --red-light: #FEF2F2;
+            --red-border: #FCA5A5;
+            
+            --slate-primary: #1E293B;
+            --slate-light: #F1F5F9;
+            
+            --font-headers: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+            
+            --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Base Reset styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            padding-bottom: 60px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Premium Header styling */
+        header {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            padding: 24px 0;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .brand-block h1 {
+            font-family: var(--font-headers);
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--slate-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-badge {
+            background-color: var(--orange-light);
+            color: var(--orange-primary);
+            border: 1px solid var(--orange-border);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .brand-block p {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .meta-pills {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .meta-pill {
+            background-color: var(--slate-light);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .meta-pill span {
+            font-weight: 700;
+            color: var(--slate-primary);
+        }
+
+        /* 2-Column Grid Layout for Simulator Controls and Main Cards */
+        .simulator-grid {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 32px;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .simulator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sidebar Control Panel styling */
+        .sidebar {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 24px;
+        }
+
+        .sidebar-section-title {
+            font-family: var(--font-headers);
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--slate-primary);
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--slate-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .control-group {
+            margin-bottom: 24px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .control-value {
+            font-family: var(--font-headers);
+            font-weight: 700;
+            color: var(--slate-primary);
+            font-size: 15px;
+        }
+
+        .slider-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--slate-light);
+            outline: none;
+            transition: background 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--orange-primary);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border: none;
+            border-radius: 50%;
+            background: var(--orange-primary);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        .slider-scale {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Clean White Cards Grid styling */
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            border-color: var(--border-hover);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-header-block {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card-value {
+            font-family: var(--font-headers);
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--slate-primary);
+            margin-bottom: 4px;
+        }
+
+        .card-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        /* Specific card skins */
+        .card-uncapped {
+            border-top: 4px solid var(--slate-primary);
+        }
+        .card-capped {
+            border-top: 4px solid var(--green-primary);
+            background-image: linear-gradient(to bottom, var(--green-light) 0%, transparent 40px);
+        }
+        .card-burden {
+            border-top: 4px solid var(--red-primary);
+            background-image: linear-gradient(to bottom, var(--red-light) 0%, transparent 40px);
+        }
+
+        /* Tabs Panel for Simulation Sections */
+        .tabs-container {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+
+        .tabs-header {
+            background-color: var(--slate-light);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 16px 24px;
+            font-family: var(--font-headers);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: var(--slate-primary);
+            background-color: rgba(0,0,0,0.02);
+        }
+
+        .tab-btn.active {
+            color: var(--orange-primary);
+            border-bottom-color: var(--orange-primary);
+            background-color: var(--bg-card);
+        }
+
+        .tab-content {
+            padding: 28px;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Section Layout Grids */
+        .section-title-wrapper {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-family: var(--font-headers);
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--slate-primary);
+        }
+
+        .section-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Grid for Cards in tabs */
+        .sub-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .sub-card {
+            background-color: var(--slate-light);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .sub-card-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .sub-card-value {
+            font-family: var(--font-headers);
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--slate-primary);
+        }
+
+        /* 2-Column Section layout for Charts */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-box {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            min-height: 380px;
+            position: relative;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .chart-box-title {
+            font-family: var(--font-headers);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--slate-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Interactive Heatmap Matrix Grid */
+        .heatmap-container {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--bg-card);
+            margin-bottom: 24px;
+        }
+
+        .heatmap-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            text-align: right;
+            min-width: 800px;
+        }
+
+        .heatmap-table th, .heatmap-table td {
+            padding: 12px 14px;
+            border: 1px solid var(--border-color);
+        }
+
+        .heatmap-table th {
+            background-color: var(--slate-light);
+            font-weight: 600;
+            color: var(--slate-primary);
+            text-align: center;
+        }
+
+        .heatmap-table td.y-axis-label {
+            background-color: var(--slate-light);
+            font-weight: 700;
+            color: var(--slate-primary);
+            text-align: left;
+            position: sticky;
+            left: 0;
+        }
+
+        .heatmap-cell {
+            font-weight: 700;
+            transition: var(--transition-smooth);
+        }
+
+        /* Extensive Accordion Glossary Cards */
+        .glossary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .glossary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .glossary-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            transition: var(--transition-smooth);
+        }
+
+        .glossary-card:hover {
+            border-color: var(--border-hover);
+            background-color: var(--slate-light);
+        }
+
+        .glossary-term {
+            font-family: var(--font-headers);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--slate-primary);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .glossary-index-badge {
+            background-color: var(--slate-light);
+            color: var(--slate-primary);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .glossary-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Tooltip style explanation cards */
+        .briefing-box {
+            background-color: var(--orange-light);
+            border: 1px solid var(--orange-border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .briefing-box svg {
+            flex-shrink: 0;
+            color: var(--orange-primary);
+            margin-top: 2px;
+        }
+
+        .briefing-text h4 {
+            font-family: var(--font-headers);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--slate-primary);
+            margin-bottom: 4px;
+        }
+
+        .briefing-text p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* SVG Icons classes */
+        .icon-svg {
+            width: 20px;
+            height: 20px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Premium Clean White UI Header -->
+    <header>
+        <div class="container header-container">
+            <div class="brand-block">
+                <h1>
+                    <svg class="icon-svg" style="color: var(--orange-primary);" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    MERALCO DER Rules Interactive Web Simulator
+                    <span class="brand-badge">Rules v2026</span>
+                </h1>
+                <p>Advanced Real-Time Regulatory Economics and Distributed Grid Integration Simulator</p>
+            </div>
+            
+            <div class="meta-pills">
+                <div class="meta-pill">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Simulation Date: <span>May 27, 2026</span>
+                </div>
+                <div class="meta-pill">
+                    <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    Database Context: <span>Meralco May 2026</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="container">
+
+        <!-- Top Briefing Card -->
+        <div class="briefing-box">
+            <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="briefing-text">
+                <h4>Energy-Based Regulatory Export Cap Modeling</h4>
+                <p>This web simulator replicates the math models developed for MERALCO franchise operations under Distributed Energy Resources (DER) rules. <strong>The 30% export cap is strictly energy-based</strong> (limiting total annual exported solar energy to 30% of solar generation in kWh) and prosumer exports are paid via dynamic generation charges with tiered capacity multipliers (75% for 100kW–500kW and 60% for 500kW–1MW), protecting regular non-solar consumers from cross-subsidies.</p>
+            </div>
+        </div>
+
+        <div class="simulator-grid">
+            
+            <!-- Sidebar Controllers -->
+            <aside class="sidebar">
+                <div class="sidebar-section-title">
+                    <span>Interactive Sliders</span>
+                    <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </div>
+                
+                <!-- 1. System size -->
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Solar System Size</span>
+                        <span class="control-value" id="val-size">450 kWp</span>
+                    </div>
+                    <div class="slider-wrapper">
+                        <input type="range" id="slide-size" min="100" max="1000" step="10" value="450">
+                    </div>
+                    <div class="slider-scale">
+                        <span>100 kWp</span>
+                        <span>500 kWp</span>
+                        <span>1000 kWp</span>
+                    </div>
+                </div>
+
+                <!-- 2. Export Cap -->
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Export Cap (Energy-Based)</span>
+                        <span class="control-value" id="val-cap">30%</span>
+                    </div>
+                    <div class="slider-wrapper">
+                        <input type="range" id="slide-cap" min="0" max="100" step="5" value="30">
+                    </div>
+                    <div class="slider-scale">
+                        <span>0% (Capped)</span>
+                        <span>50%</span>
+                        <span>100% (Uncapped)</span>
+                    </div>
+                </div>
+
+                <!-- 3. Gen Rate -->
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Blended Gen Rate</span>
+                        <span class="control-value" id="val-gen">₱8.79 /kWh</span>
+                    </div>
+                    <div class="slider-wrapper">
+                        <input type="range" id="slide-gen" min="6.00" max="14.00" step="0.10" value="8.7942">
+                    </div>
+                    <div class="slider-scale">
+                        <span>₱6.00</span>
+                        <span>₱10.00</span>
+                        <span>₱14.00</span>
+                    </div>
+                </div>
+
+                <!-- 4. Penetration -->
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>DER Grid Penetration</span>
+                        <span class="control-value" id="val-pen">10%</span>
+                    </div>
+                    <div class="slider-wrapper">
+                        <input type="range" id="slide-pen" min="1" max="50" step="1" value="10">
+                    </div>
+                    <div class="slider-scale">
+                        <span>1%</span>
+                        <span>25%</span>
+                        <span>50%</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Panel containing cards and tabs -->
+            <section class="main-panel">
+                
+                <!-- Master Dashboard Summary Cards -->
+                <div class="dashboard-cards">
+                    <!-- Uncapped savings -->
+                    <div class="card card-uncapped">
+                        <div class="card-header-block">
+                            <span class="card-title">Uncapped DER Payback</span>
+                            <span class="card-badge" style="background-color: var(--slate-light); color: var(--slate-primary);">100% Export</span>
+                        </div>
+                        <div class="card-value" id="card-uncapped-payback">6.4 Yrs</div>
+                        <div class="card-desc">
+                            <span>Annual Savings:</span>
+                            <strong id="card-uncapped-savings">₱5.93M/yr</strong>
+                        </div>
+                    </div>
+
+                    <!-- Capped Savings -->
+                    <div class="card card-capped">
+                        <div class="card-header-block">
+                            <span class="card-title">Capped & Tiered Payback</span>
+                            <span class="card-badge" style="background-color: var(--green-light); color: var(--green-primary);" id="card-capped-badge">30% Cap | 75% GC</span>
+                        </div>
+                        <div class="card-value" id="card-capped-payback">4.6 Yrs</div>
+                        <div class="card-desc">
+                            <span>Annual Savings:</span>
+                            <strong style="color: var(--green-primary);" id="card-capped-savings">₱8.18M/yr</strong>
+                        </div>
+                    </div>
+
+                    <!-- Grid Burden -->
+                    <div class="card card-burden">
+                        <div class="card-header-block">
+                            <span class="card-title">Total Grid Burden Shift</span>
+                            <span class="card-badge" style="background-color: var(--red-light); color: var(--red-primary);" id="card-burden-rate-hike">+₱0.1234/kWh</span>
+                        </div>
+                        <div class="card-value" id="card-burden-shift">₱36.37B</div>
+                        <div class="card-desc">
+                            <span>Avg Household:</span>
+                            <strong style="color: var(--red-primary);" id="card-burden-household">+₱35.90/mo</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simulation Section Tabs -->
+                <div class="tabs-container">
+                    <div class="tabs-header">
+                        <button class="tab-btn active" onclick="switchTab(event, 'tab-roi')">
+                            <svg class="icon-svg" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                            Prosumer ROI
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'tab-burden')">
+                            <svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                            Macro Grid Impact
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'tab-advanced')">
+                            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            Advanced Economics (Col L–U)
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'tab-heatmap')">
+                            <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+                            Legislative Heatmaps & Table 3
+                        </button>
+                        <button class="tab-btn" onclick="switchTab(event, 'tab-glossary')">
+                            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5v-15z"/></svg>
+                            Glossary (20 Terms)
+                        </button>
+                    </div>
+
+                    <!-- TAB 1: PROSUMER ROI -->
+                    <div id="tab-roi" class="tab-content active">
+                        <div class="section-title-wrapper">
+                            <h3 class="section-title">Prosumer Financial Return on Investment</h3>
+                            <p class="section-desc">Replicates the individual economics of the reference 450 kWp commercial system under uncapped vs. capped rules.</p>
+                        </div>
+                        
+                        <div class="sub-cards-grid">
+                            <div class="sub-card">
+                                <div class="sub-card-title">Solar Gen Capacity (Annual)</div>
+                                <div class="sub-card-value" id="roi-annual-gen">709,560 kWh</div>
+                            </div>
+                            <div class="sub-card">
+                                <div class="sub-card-title">Solar Capital Cost (CapEx)</div>
+                                <div class="sub-card-value" id="roi-capex">₱18,000,000</div>
+                            </div>
+                            <div class="sub-card">
+                                <div class="sub-card-title">Capped Export Compensated</div>
+                                <div class="sub-card-value" id="roi-capped-gen">212,868 kWh</div>
+                            </div>
+                            <div class="sub-card">
+                                <div class="sub-card-title">Self-Consumed Solar (70%)</div>
+                                <div class="sub-card-value" id="roi-self-gen">496,692 kWh</div>
+                            </div>
+                        </div>
+
+                        <div class="charts-row">
+                            <!-- Chart 1 -->
+                            <div class="chart-box">
+                                <div class="chart-box-title">
+                                    <span>Payback Period Comparison (Years)</span>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="chartPayback"></canvas>
+                                </div>
+                            </div>
+                            <!-- Chart 3 -->
+                            <div class="chart-box">
+                                <div class="chart-box-title">
+                                    <span>Savings vs. Grid Burden across Export Caps (₱)</span>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="chartBurdenCap"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: MACRO GRID IMPACT -->
+                    <div id="tab-burden" class="tab-content">
+                        <div class="section-title-wrapper">
+                            <h3 class="section-title">Macro Grid Financial Shift & Consumer Burden</h3>
+                            <p class="section-desc">Calculates the systemic cross-subsidies shifted onto the general public at the franchise level (10% DER penetration proxy).</p>
+                        </div>
+                        
+                        <div class="sub-cards-grid">
+                            <div class="sub-card" style="border-left: 3px solid var(--orange-primary);">
+                                <div class="sub-card-title">Shifted Generation Cost</div>
+                                <div class="sub-card-value" style="color: var(--orange-primary);" id="shift-gen">₱6.21B/yr</div>
+                            </div>
+                            <div class="sub-card" style="border-left: 3px solid var(--orange-primary);">
+                                <div class="sub-card-title">Stranded Distribution Wires</div>
+                                <div class="sub-card-value" style="color: var(--orange-primary);" id="shift-stranded">₱26.37B/yr</div>
+                            </div>
+                            <div class="sub-card" style="border-left: 3px solid var(--orange-primary);">
+                                <div class="sub-card-title">Subsidy Shortfall (Lifeline)</div>
+                                <div class="sub-card-value" style="color: var(--orange-primary);" id="shift-subsidy">₱3.79B/yr</div>
+                            </div>
+                            <div class="sub-card" style="border-left: 3px solid var(--slate-primary);">
+                                <div class="sub-card-title">Social Equity Shift Ratio</div>
+                                <div class="sub-card-value" id="shift-equity-ratio">4.44</div>
+                            </div>
+                        </div>
+
+                        <div class="charts-row">
+                            <!-- Chart 2 -->
+                            <div class="chart-box" style="grid-column: span 2;">
+                                <div class="chart-box-title">
+                                    <span>Systemic Grid Burden Shift vs. Solar Franchise Penetration (₱)</span>
+                                </div>
+                                <div class="chart-container" style="height: 350px;">
+                                    <canvas id="chartBurdenPen"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: ADVANCED REGULATORY ECONOMICS -->
+                    <div id="tab-advanced" class="tab-content">
+                        <div class="section-title-wrapper">
+                            <h3 class="section-title">Advanced Regulatory Economics & Grid Engineering Metrics</h3>
+                            <p class="section-desc">Live calculations representing columns L to U of the Excel sheet, showing advanced grid stability offsets and valuations.</p>
+                        </div>
+
+                        <div class="dashboard-cards" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+                            <!-- L -->
+                            <div class="sub-card">
+                                <div class="sub-card-title">WESM Merit-Order Suppression</div>
+                                <div class="sub-card-value" id="adv-l">₱1,147,500</div>
+                                <div class="glossary-desc">Wholesale spot clearing price suppression from daylight injection.</div>
+                            </div>
+                            <!-- M -->
+                            <div class="sub-card">
+                                <div class="sub-card-title">Feeder Hosting Capacity Stress</div>
+                                <div class="sub-card-value" id="adv-m">27.00</div>
+                                <div class="glossary-desc">Localized thermal stress index loading on line substation regulators.</div>
+                            </div>
+                            <!-- N -->
+                            <div class="sub-card">
+                                <div class="sub-card-title">Levelized Avoided Cost (LACOE)</div>
+                                <div class="sub-card-value" id="adv-n">₱9.2567 /kWh</div>
+                                <div class="glossary-desc">Clearing cost of energy displaced per solar export kWh.</div>
+                            </div>
+                            <!-- O -->
+                            <div class="sub-card">
+                                <div class="sub-card-title">Levelized Cost of Solar (LCOE)</div>
+                                <div class="sub-card-value" id="adv-o">₱2.9567 /kWh</div>
+                                <div class="glossary-desc">Lifetime generation unit-cost amortized at 10.75% WACC over 25 years.</div>
+                            </div>
+                            <!-- P -->
+                            <div class="sub-card">
+                                <div class="sub-card-title">Gini Coefficient Subsidy Shift</div>
+                                <div class="sub-card-value" id="adv-p">1.25</div>
+                                <div class="glossary-desc">Gini-coefficient regressive tax wealth multiplier metric.</div>
+                            </div>
+                            <!-- Q -->
+                            <div class="sub-card">
+                                <div class="sub-card-title">Battery Storage CAPEX Offset</div>
+                                <div class="sub-card-value" id="adv-q">₱11,865,000</div>
+                                <div class="glossary-desc">Carrying stranded wires CAPEX deferred by co-located BESS systems.</div>
+                            </div>
+                            <!-- R -->
+                            <div class="sub-card">
+                                <div class="sub-card-title">Transformer Lifespan Offset</div>
+                                <div class="sub-card-value" id="adv-r">2.45 Yrs</div>
+                                <div class="glossary-desc">Thermal lifespans years added to line substation transformers.</div>
+                            </div>
+                            <!-- S -->
+                            <div class="sub-card">
+                                <div class="sub-card-title">Intermittency Reserve Surcharge</div>
+                                <div class="sub-card-value" id="adv-s">₱81,000</div>
+                                <div class="glossary-desc">Spinning standby ancillary service peaking costs for grid safety.</div>
+                            </div>
+                            <!-- T -->
+                            <div class="sub-card">
+                                <div class="sub-card-title">Socio-Economic Carbon Tax Credit</div>
+                                <div class="sub-card-value" id="adv-t">₱3,450,000</div>
+                                <div class="glossary-desc">Environmental green premium credit under carbon credit valuations.</div>
+                            </div>
+                            <!-- U -->
+                            <div class="sub-card">
+                                <div class="sub-card-title">Avoided Peak Capacity Reserve</div>
+                                <div class="sub-card-value" id="adv-u">₱4,725,000</div>
+                                <div class="glossary-desc">Valuation of deferred fossil-peaker generation capacity additions.</div>
+                            </div>
+                        </div>
+
+                        <div class="charts-row" style="margin-top: 24px;">
+                            <!-- Chart 4 -->
+                            <div class="chart-box">
+                                <div class="chart-box-title">
+                                    <span>Avoided Utility Gen Cost vs Peaking Reserve Cost (₱)</span>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="chartReserveGen"></canvas>
+                                </div>
+                            </div>
+                            <!-- Chart 5 -->
+                            <div class="chart-box">
+                                <div class="chart-box-title">
+                                    <span>Equilibrium Tariff vs. Levelized Cost of Solar (₱/kWh)</span>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="chartTariffLcoe"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 4: WHAT-IF HEATMAP -->
+                    <div id="tab-heatmap" class="tab-content">
+                        <div class="section-title-wrapper">
+                            <h3 class="section-title">Legislative Bill Impact & Social Equity Dashboard</h3>
+                            <p class="section-desc">Replicates the monthly bill impact and consumer rate protections simulated for the House of Representatives under the ERC DER Rules.</p>
+                        </div>
+                        
+                        <h4 style="font-family: var(--font-headers); font-size: 16px; font-weight: 700; color: var(--slate-primary); margin-top: 24px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                            <span style="background-color: var(--red-light); color: var(--red-primary); font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">HEATMAP 1</span>
+                            Monthly Bill Increase Under Unregulated Scenario (No Caps, No Discounts)
+                        </h4>
+                        <p class="section-desc" style="margin-bottom: 12px; font-size: 13px;">This simulation models regressive cost-shifting and subsequent bill inflation imposed on non-solar captive consumers as commercial solar installations scale up without regulatory limits.</p>
+                        <div class="heatmap-container" style="margin-bottom: 24px;">
+                            <table class="heatmap-table" id="heatmap-matrix-gen">
+                                <!-- Generated by JS -->
+                            </table>
+                        </div>
+
+                        <h4 style="font-family: var(--font-headers); font-size: 16px; font-weight: 700; color: var(--slate-primary); margin-top: 32px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                            <span style="background-color: var(--green-light); color: var(--green-primary); font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">HEATMAP 2</span>
+                            Monthly Bill Impact Under Regulated Scenario (ERC Resolution No. 11, Series of 2022)
+                        </h4>
+                        <p class="section-desc" style="margin-bottom: 12px; font-size: 13px;">This simulation demonstrates how the current ERC capacity and pricing rules shield ordinary ratepayers, keeping monthly bill adjustments near zero even at very high levels of solar penetration.</p>
+                        <div class="heatmap-container" style="margin-bottom: 24px;">
+                            <table class="heatmap-table" id="heatmap-matrix-retail">
+                                <!-- Generated by JS -->
+                            </table>
+                        </div>
+
+                        <h4 style="font-family: var(--font-headers); font-size: 16px; font-weight: 700; color: var(--slate-primary); margin-top: 32px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                            <span style="background-color: var(--orange-light); color: var(--orange-primary); font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">TABLE 3</span>
+                            Direct Monthly & Annual Savings Secured for Non-Solar Households by ERC Rules
+                        </h4>
+                        <p class="section-desc" style="margin-bottom: 12px; font-size: 13px;">By comparing the Unregulated and Regulated scenarios at a realistic 35% penetration level, this table highlights the exact amount of household income protected by the ERC's pricing limits.</p>
+                        <div class="heatmap-container" style="margin-bottom: 32px;">
+                            <table class="heatmap-table" id="table-3-savings">
+                                <!-- Generated by JS -->
+                            </table>
+                        </div>
+
+                        <h4 style="font-family: var(--font-headers); font-size: 16px; font-weight: 700; color: var(--slate-primary); margin-top: 32px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                            <span style="background-color: var(--slate-primary); color: var(--slate-light); font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">HEATMAP 3</span>
+                            Rate Hike vs. Penetration & Blended Generation Rate (Php/kWh)
+                        </h4>
+                        <p class="section-desc" style="margin-bottom: 12px; font-size: 13px;">Shows the franchise rate hike (₱/kWh) loaded onto regular consumers when the base customer retail rate is held constant at ₱14.64/kWh (updated from May 2026 rates) while the utility blended generation charge varies on the Y-axis.</p>
+                        <div class="heatmap-container" style="margin-bottom: 24px;">
+                            <table class="heatmap-table" id="heatmap-matrix-hike-gen">
+                                <!-- Generated by JS -->
+                            </table>
+                        </div>
+
+                        <h4 style="font-family: var(--font-headers); font-size: 16px; font-weight: 700; color: var(--slate-primary); margin-top: 32px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                            <span style="background-color: var(--slate-primary); color: var(--slate-light); font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">HEATMAP 4</span>
+                            Rate Hike vs. Penetration & Customer Retail Rate (Php/kWh)
+                        </h4>
+                        <p class="section-desc" style="margin-bottom: 12px; font-size: 13px;">Shows the franchise rate hike (₱/kWh) loaded onto regular consumers when the utility blended generation charge is held constant at the active slider value (₱<span id="heatmap-gen-ref-val">8.79</span>/kWh) while the base customer retail charge varies on the Y-axis.</p>
+                        <div class="heatmap-container" style="margin-bottom: 24px;">
+                            <table class="heatmap-table" id="heatmap-matrix-hike-retail">
+                                <!-- Generated by JS -->
+                            </table>
+                        </div>
+                        
+                        <div style="display: flex; gap: 16px; font-size: 11px; color: var(--text-muted); align-items: center; justify-content: center; margin-top: 16px;">
+                            <span>Color Key (Rate Hike per kWh):</span>
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <div style="width:12px; height:12px; background-color:#C6EFCE; border:1px solid #C6EFCE; border-radius:2px;"></div>
+                                <span>Negligible Impact (&lt;₱0.10)</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <div style="width:12px; height:12px; background-color:#FFEB9C; border:1px solid #FFEB9C; border-radius:2px;"></div>
+                                <span>Moderate Hike (₱0.10 - ₱0.35)</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <div style="width:12px; height:12px; background-color:#FFC7CE; border:1px solid #FFC7CE; border-radius:2px;"></div>
+                                <span>Severe Hike (&gt;₱0.35)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 5: LEGISLATIVE GLOSSARY -->
+                    <div id="tab-glossary" class="tab-content">
+                        <div class="section-title-wrapper">
+                            <h3 class="section-title">Legislative Briefing Glossary & Definitions</h3>
+                            <p class="section-desc">Translates all 20 advanced engineering, grid stability, and regulatory economics parameters into clear congressional layman concepts.</p>
+                        </div>
+                        
+                        <div class="glossary-grid" id="glossary-accordion-container">
+                            <!-- Populated dynamically by JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Interactive Simulator Calculations Core Script (JavaScript) -->
+    <script>
+        // Global Constants
+        const FranchiseDemand = 45000000000;
+        const NonSolarCustomers = 7500000;
+        const AvgResUse = 200;
+        const SolarPVCost = 40000;
+        const SolarCapacityFactor = 0.18;
+        const MeralcoWACC = 0.1075;
+        const CO2OffsetFactor = 0.65;
+        const SocialCostCarbon = 2.50;
+        const AncillaryPeakingReserve = 1500.00;
+        const AvoidedPeakGenBenefit = 3.50;
+        const SystemHostingBurden = 1.25;
+        
+        // Fixed retail rates proxy
+        const RetailRate = 14.6438; // Updated from Meralco URR excel for Residential
+        const StrandedRate = 0.9803;
+        const SubsidyRate = 0.0100;
+
+        // Interactive Sliders DOM
+        const slideSize = document.getElementById("slide-size");
+        const slideCap = document.getElementById("slide-cap");
+        const slideGen = document.getElementById("slide-gen");
+        const slidePen = document.getElementById("slide-pen");
+
+        // Values Bubble DOM
+        const valSize = document.getElementById("val-size");
+        const valCap = document.getElementById("val-cap");
+        const valGen = document.getElementById("val-gen");
+        const valPen = document.getElementById("val-pen");
+
+        // Chart References
+        let chartPayback = null;
+        let chartBurdenPen = null;
+        let chartBurdenCap = null;
+        let chartReserveGen = null;
+        let chartTariffLcoe = null;
+
+        // PMT dynamic implementation
+        function pmt(rate, nper, pv) {
+            return pv * rate / (1 - Math.pow(1 + rate, -nper));
+        }
+
+        // Color interpolation for Heatmap
+        function getCellGradientColor(hike) {
+            // Clamp value between 0.0 and 2.0 Php for coloring
+            let val = Math.max(0.0, Math.min(2.0, hike));
+            let r, g, b;
+            if (val <= 0.20) {
+                // Soft Green (198, 239, 206) to Yellow (255, 235, 156)
+                let ratio = val / 0.20;
+                r = Math.round(198 + (255 - 198) * ratio);
+                g = Math.round(239 + (235 - 239) * ratio);
+                b = Math.round(206 + (156 - 206) * ratio);
+            } else {
+                // Yellow (255, 235, 156) to Warning Red (255, 199, 206)
+                let ratio = (val - 0.20) / 1.80;
+                r = Math.round(255 + (255 - 255) * ratio);
+                g = Math.round(235 + (199 - 235) * ratio);
+                b = Math.round(156 + (206 - 156) * ratio);
+            }
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function getCellFontColor(hike) {
+            let val = Math.max(0.0, Math.min(2.0, hike));
+            let r, g, b;
+            if (val <= 0.20) {
+                // Green font (0, 97, 0) to Yellow font (156, 101, 0)
+                let ratio = val / 0.20;
+                r = Math.round(0 + (156 - 0) * ratio);
+                g = Math.round(97 + (101 - 97) * ratio);
+                b = Math.round(0 + (0 - 0) * ratio);
+            } else {
+                // Yellow font (156, 101, 0) to Red font (156, 0, 6)
+                let ratio = (val - 0.20) / 1.80;
+                r = Math.round(156 + (156 - 156) * ratio);
+                g = Math.round(101 + (0 - 101) * ratio);
+                b = Math.round(0 + (6 - 0) * ratio);
+            }
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        // Live calculation engine
+        function runSimulation() {
+            // Read active values
+            const size = parseFloat(slideSize.value);
+            const cap = parseFloat(slideCap.value) / 100.0;
+            const gen = parseFloat(slideGen.value);
+            const pen = parseFloat(slidePen.value) / 100.0;
+
+            // Update sliders bubble UI
+            valSize.innerText = `${size.toLocaleString()} kWp`;
+            valCap.innerText = `${Math.round(cap * 100)}%`;
+            valGen.innerText = `₱${gen.toFixed(2)} /kWh`;
+            valPen.innerText = `${Math.round(pen * 100)}%`;
+
+            // 1. Prosumer Calculations
+            const solarGen = size * 8760 * SolarCapacityFactor;
+            const capEx = size * SolarPVCost;
+            
+            // Export Comp Multipliers
+            let compRate = gen;
+            let multiplierLabel = "100% GC";
+            if (size > 100 && size <= 500) {
+                compRate = gen * 0.75;
+                multiplierLabel = "75% GC Multiplier";
+            } else if (size > 500) {
+                compRate = gen * 0.60;
+                multiplierLabel = "60% GC Multiplier";
+            }
+
+            // Savings (Uncapped vs Capped)
+            const uncappedSavings = solarGen * gen;
+            const cappedSavings = (solarGen * (1 - cap) * RetailRate) + (solarGen * cap * compRate);
+            
+            const uncappedPayback = capEx / uncappedSavings;
+            const cappedPayback = capEx / cappedSavings;
+
+            // Update top cards prosumer UI
+            document.getElementById("card-uncapped-payback").innerText = `${uncappedPayback.toFixed(2)} Yrs`;
+            document.getElementById("card-uncapped-savings").innerText = `₱${(uncappedSavings).toLocaleString(undefined, {maximumFractionDigits:0})}/yr`;
+            document.getElementById("card-capped-payback").innerText = `${cappedPayback.toFixed(2)} Yrs`;
+            document.getElementById("card-capped-savings").innerText = `₱${(cappedSavings).toLocaleString(undefined, {maximumFractionDigits:0})}/yr`;
+            document.getElementById("card-capped-badge").innerText = `${Math.round(cap*100)}% Cap | ${multiplierLabel}`;
+
+            // Update Tab 1 parameters
+            document.getElementById("roi-annual-gen").innerText = `${Math.round(solarGen).toLocaleString()} kWh`;
+            document.getElementById("roi-capex").innerText = `₱${Math.round(capEx).toLocaleString()}`;
+            document.getElementById("roi-capped-gen").innerText = `${Math.round(solarGen * cap).toLocaleString()} kWh`;
+            document.getElementById("roi-self-gen").innerText = `${Math.round(solarGen * (1 - cap)).toLocaleString()} kWh`;
+
+            // 2. Utility & Grid Shifts Calculations
+            const franchiseSolar = pen * FranchiseDemand;
+            
+            // Energy-Based Shifts
+            const shiftedGenCost = (franchiseSolar * (1 - cap) * (RetailRate - gen)) + (franchiseSolar * cap * (compRate - gen));
+            const strandedWires = franchiseSolar * (1 - cap) * StrandedRate;
+            const subsidyShortfall = franchiseSolar * (1 - cap) * SubsidyRate;
+            const totalGridBurden = shiftedGenCost + strandedWires + subsidyShortfall;
+            
+            const rateHike = totalGridBurden / (FranchiseDemand - (cap * franchiseSolar));
+            const houseBillHike = rateHike * AvgResUse;
+
+            const socialEquityRatio = totalGridBurden / cappedSavings;
+            const weightedReturn = (1 - cap) * RetailRate + cap * compRate;
+            const assetRecovery = strandedWires / (totalGridBurden * 0.05 + 1);
+            const gridHostingIndex = cap * 100;
+            const wealthShiftIndex = (cappedSavings / (rateHike + 0.0001)) / 10000;
+
+            // Update Tab 2 parameters
+            document.getElementById("shift-gen").innerText = `₱${(shiftedGenCost/1e9).toFixed(2)} Billion`;
+            document.getElementById("shift-stranded").innerText = `₱${(strandedWires/1e9).toFixed(2)} Billion`;
+            document.getElementById("shift-subsidy").innerText = `₱${(subsidyShortfall/1e9).toFixed(2)} Billion`;
+            document.getElementById("shift-equity-ratio").innerText = socialEquityRatio.toFixed(2);
+
+            // Update top cards grid UI
+            document.getElementById("card-burden-shift").innerText = `₱${(totalGridBurden/1e9).toFixed(2)} Billion`;
+            document.getElementById("card-burden-rate-hike").innerText = `+₱${rateHike.toFixed(4)}/kWh`;
+            document.getElementById("card-burden-household").innerText = `+₱${houseBillHike.toFixed(2)}/mo`;
+
+            // 3. Tab 3: Advanced Regulatory Parameters (Cols L to U)
+            const advL = cap * franchiseSolar * 0.85;
+            const advM = cap * 100 * 0.90;
+            const advN = gen + (strandedWires / (cap * franchiseSolar + 1)) + 0.85;
+            const advO = pmt(MeralcoWACC, 25, capEx) / solarGen;
+            const advP = rateHike * (1 + wealthShiftIndex / 100);
+            const advQ = strandedWires * 0.45;
+            const advR = Math.max(0.5, 3.5 * (1 - (cap * 100) / 100));
+            const advS = size * AncillaryPeakingReserve * 0.12;
+            const advT = franchiseSolar * CO2OffsetFactor * SocialCostCarbon * 1.50;
+            const advU = cap * franchiseSolar * AvoidedPeakGenBenefit;
+
+            document.getElementById("adv-l").innerText = `₱${Math.round(advL).toLocaleString()}`;
+            document.getElementById("adv-m").innerText = advM.toFixed(2);
+            document.getElementById("adv-n").innerText = `₱${advN.toFixed(4)} /kWh`;
+            document.getElementById("adv-o").innerText = `₱${advO.toFixed(4)} /kWh`;
+            document.getElementById("adv-p").innerText = advP.toFixed(2);
+            document.getElementById("adv-q").innerText = `₱${Math.round(advQ).toLocaleString()}`;
+            document.getElementById("adv-r").innerText = `${advR.toFixed(2)} Yrs`;
+            document.getElementById("adv-s").innerText = `₱${Math.round(advS).toLocaleString()}`;
+            document.getElementById("adv-t").innerText = `₱${Math.round(advT).toLocaleString()}`;
+            document.getElementById("adv-u").innerText = `₱${Math.round(advU).toLocaleString()}`;
+
+            // 4. Update the What-If Heatmap Grid
+            updateHeatmap(cap, compRate, gen);
+
+            // 5. Update All 5 Dynamic Charts
+            updateCharts(uncappedPayback, cappedPayback, gen, size, RetailRate, StrandedRate, SubsidyRate, compRate, capEx, solarGen, advO);
+        }
+
+        // What-If Matrix generation and dynamic updates
+        function updateHeatmap(cap, compRate, genVal) {
+            const penetrationsList = [0.01, 0.05, 0.10, 0.20, 0.35];
+            const householdClasses = [50, 100, 200, 400];
+            
+            const riskAssessments = {
+                0.01: "Low Risk: Initial cost-shifting absorbed.",
+                0.05: "Moderate Risk: Minor upward rate pressure.",
+                0.10: "High Risk: Noticeable financial strain on households.",
+                0.20: "Severe Risk: Regressive wealth transfer accelerates.",
+                0.35: "Extreme Critical Risk: Threatens grid viability and affordability."
+            };
+            
+            const protectionStatus = {
+                0.01: "Fully Protected: Safe operational zone.",
+                0.05: "Fully Protected: Rate impact negligible.",
+                0.10: "Fully Protected: Rate impact successfully managed.",
+                0.20: "Fully Protected: Strong containment of cost-shifts.",
+                0.35: "Successfully Managed: Affordable limits preserved."
+            };
+
+            // 1. Update Heatmap 1: Unregulated Scenario
+            const tableGen = document.getElementById("heatmap-matrix-gen");
+            if (tableGen) {
+                tableGen.innerHTML = "";
+                let headerHTML = `<tr>
+                    <th>DER Grid Penetration Level</th>
+                    <th>Lifeline Household (50 kWh)</th>
+                    <th>Low-Income Household (100 kWh)</th>
+                    <th>Average Household (200 kWh)</th>
+                    <th>Upper-Middle Household (400 kWh)</th>
+                    <th>Socio-Economic Risk Assessment</th>
+                </tr>`;
+                tableGen.innerHTML += headerHTML;
+
+                penetrationsList.forEach(pen => {
+                    const penLabel = pen === 0.35 ? "35% Penetration (Critical Penetration)" : `${Math.round(pen * 100)}% Penetration`;
+                    let rowHTML = `<tr><td class="y-axis-label">${penLabel}</td>`;
+                    
+                    // Unregulated Scenario Hike:
+                    // term = (RetailRate + StrandedRate + SubsidyRate) - genVal
+                    // rateHike = pen * term / (1 - pen)
+                    const term = (RetailRate + StrandedRate + SubsidyRate) - genVal;
+                    const rateHike = (pen * term) / (1 - pen);
+
+                    householdClasses.forEach(h => {
+                        const billHike = rateHike * h;
+                        let bgCol = getCellGradientColor(rateHike);
+                        let fontCol = getCellFontColor(rateHike);
+                        rowHTML += `<td class="heatmap-cell" style="background-color: ${bgCol}; color: ${fontCol}; font-weight:700;">+₱${billHike.toFixed(2)}</td>`;
+                    });
+                    
+                    rowHTML += `<td style="text-align: left; font-weight: 500; font-size: 11px; padding: 12px; border: 1px solid var(--border-color); color: var(--text-secondary);">${riskAssessments[pen]}</td></tr>`;
+                    tableGen.innerHTML += rowHTML;
+                });
+            }
+
+            // 2. Update Heatmap 2: Regulated Scenario
+            const tableRetail = document.getElementById("heatmap-matrix-retail");
+            if (tableRetail) {
+                tableRetail.innerHTML = "";
+                let headerHTML = `<tr>
+                    <th>DER Grid Penetration Level</th>
+                    <th>Lifeline Household (50 kWh)</th>
+                    <th>Low-Income Household (100 kWh)</th>
+                    <th>Average Household (200 kWh)</th>
+                    <th>Upper-Middle Household (400 kWh)</th>
+                    <th>Consumer Protection Status</th>
+                </tr>`;
+                tableRetail.innerHTML += headerHTML;
+
+                penetrationsList.forEach(pen => {
+                    const penLabel = pen === 0.35 ? "35% Penetration (Critical Penetration)" : `${Math.round(pen * 100)}% Penetration`;
+                    let rowHTML = `<tr><td class="y-axis-label">${penLabel}</td>`;
+                    
+                    // Regulated Scenario Hike:
+                    // term = (1 - cap) * (RetailRate + StrandedRate + SubsidyRate) + cap * compRate - genVal
+                    // rateHike = pen * term / (1 - pen * cap)
+                    const term = (1 - cap) * (RetailRate + StrandedRate + SubsidyRate) + cap * compRate - genVal;
+                    const rateHike = (pen * term) / (1 - pen * cap);
+
+                    householdClasses.forEach(h => {
+                        const billHike = rateHike * h;
+                        let bgCol = getCellGradientColor(rateHike);
+                        let fontCol = getCellFontColor(rateHike);
+                        rowHTML += `<td class="heatmap-cell" style="background-color: ${bgCol}; color: ${fontCol}; font-weight:700;">+₱${billHike.toFixed(2)}</td>`;
+                    });
+                    
+                    rowHTML += `<td style="text-align: left; font-weight: 500; font-size: 11px; padding: 12px; border: 1px solid var(--border-color); color: var(--text-secondary);">${protectionStatus[pen]}</td></tr>`;
+                    tableRetail.innerHTML += rowHTML;
+                });
+            }
+
+            // 3. Update Table 3: Savings Secured
+            const table3 = document.getElementById("table-3-savings");
+            if (table3) {
+                table3.innerHTML = "";
+                let headerHTML = `<tr>
+                    <th>Socio-Economic Customer Class</th>
+                    <th>Unregulated Monthly Bill Hike (at 35% Penetration)</th>
+                    <th>Regulated Monthly Bill Hike (at 35% Penetration)</th>
+                    <th>Direct Monthly Savings Secured by ERC Rules</th>
+                    <th>Direct Annualized Savings Per Family</th>
+                </tr>`;
+                table3.innerHTML += headerHTML;
+
+                const classesInfo = [
+                    { name: "Lifeline Family (50 kWh)", size: 50 },
+                    { name: "Low-Income Family (100 kWh)", size: 100 },
+                    { name: "Average Family (200 kWh)", size: 200 },
+                    { name: "Upper-Middle Family (400 kWh)", size: 400 }
+                ];
+
+                classesInfo.forEach(c => {
+                    const pen35 = 0.35;
+                    // Unregulated hike
+                    const termUnreg = (RetailRate + StrandedRate + SubsidyRate) - genVal;
+                    const rateHikeUnreg = (pen35 * termUnreg) / (1 - pen35);
+                    const billHikeUnreg = rateHikeUnreg * c.size;
+
+                    // Regulated hike
+                    const termReg = (1 - cap) * (RetailRate + StrandedRate + SubsidyRate) + cap * compRate - genVal;
+                    const rateHikeReg = (pen35 * termReg) / (1 - pen35 * cap);
+                    const billHikeReg = rateHikeReg * c.size;
+
+                    const monthlySavings = billHikeUnreg - billHikeReg;
+                    const annualSavings = monthlySavings * 12;
+
+                    let rowHTML = `<tr>
+                        <td class="y-axis-label" style="font-weight: 700;">${c.name}</td>
+                        <td class="heatmap-cell" style="background-color: #FFC7CE; color: #9C0006; font-weight:700;">+₱${billHikeUnreg.toFixed(2)}</td>
+                        <td class="heatmap-cell" style="background-color: #C6EFCE; color: #006100; font-weight:700;">+₱${billHikeReg.toFixed(2)}</td>
+                        <td class="heatmap-cell" style="background-color: #F1F5F9; color: var(--text-primary); font-weight:700;">₱${monthlySavings.toFixed(2)}</td>
+                        <td class="heatmap-cell" style="background-color: var(--orange-light); color: var(--orange-primary); font-weight:800;">₱${annualSavings.toFixed(2)}</td>
+                    </tr>`;
+                    table3.innerHTML += rowHTML;
+                });
+            }
+
+            // 4. Update Heatmap 3: Old Heatmap 1 (Rate Hike vs Penetration & Blended Gen Rate)
+            const tableHikeGen = document.getElementById("heatmap-matrix-hike-gen");
+            if (tableHikeGen) {
+                tableHikeGen.innerHTML = "";
+                const fullPens = [0.01, 0.05, 0.10, 0.15, 0.20, 0.30, 0.40, 0.50];
+                const genRatesList = [6, 7, 8, 9, 10, 11, 12, 13, 14];
+
+                let headerHTML = `<tr><th>Blended Gen Rate Y (₱/kWh)</th>`;
+                fullPens.forEach(p => {
+                    headerHTML += `<th>Penetration X = ${Math.round(p * 100)}%</th>`;
+                });
+                headerHTML += `</tr>`;
+                tableHikeGen.innerHTML += headerHTML;
+
+                genRatesList.forEach(gr => {
+                    let rowHTML = `<tr><td class="y-axis-label">₱${gr.toFixed(2)} /kWh</td>`;
+                    fullPens.forEach(p => {
+                        let term = (1 - cap) * (RetailRate + StrandedRate + SubsidyRate) + cap * compRate - gr;
+                        let hike = (p * term) / (1 - p * cap);
+                        
+                        let bgCol = getCellGradientColor(hike);
+                        let fontCol = getCellFontColor(hike);
+                        rowHTML += `<td class="heatmap-cell" style="background-color: ${bgCol}; color: ${fontCol}; font-weight:700;">+₱${hike.toFixed(4)}</td>`;
+                    });
+                    rowHTML += `</tr>`;
+                    tableHikeGen.innerHTML += rowHTML;
+                });
+            }
+
+            // 5. Update Heatmap 4: Old Heatmap 2 (Rate Hike vs Penetration & Customer Retail Rate)
+            const tableHikeRetail = document.getElementById("heatmap-matrix-hike-retail");
+            const refValSpan = document.getElementById("heatmap-gen-ref-val");
+            if (refValSpan) {
+                refValSpan.innerText = genVal.toFixed(2);
+            }
+            if (tableHikeRetail) {
+                tableHikeRetail.innerHTML = "";
+                const fullPens = [0.01, 0.05, 0.10, 0.15, 0.20, 0.30, 0.40, 0.50];
+                const retailRatesList = [8, 9, 10, 11, 12, 13, 14, 15, 16];
+
+                let headerHTML = `<tr><th>Base Retail Rate Y (₱/kWh)</th>`;
+                fullPens.forEach(p => {
+                    headerHTML += `<th>Penetration X = ${Math.round(p * 100)}%</th>`;
+                });
+                headerHTML += `</tr>`;
+                tableHikeRetail.innerHTML += headerHTML;
+
+                retailRatesList.forEach(rr => {
+                    let rowHTML = `<tr><td class="y-axis-label">₱${rr.toFixed(2)} /kWh</td>`;
+                    fullPens.forEach(p => {
+                        let term = (1 - cap) * (rr + StrandedRate + SubsidyRate) + cap * compRate - genVal;
+                        let hike = (p * term) / (1 - p * cap);
+                        
+                        let bgCol = getCellGradientColor(hike);
+                        let fontCol = getCellFontColor(hike);
+                        rowHTML += `<td class="heatmap-cell" style="background-color: ${bgCol}; color: ${fontCol}; font-weight:700;">+₱${hike.toFixed(4)}</td>`;
+                    });
+                    rowHTML += `</tr>`;
+                    tableHikeRetail.innerHTML += rowHTML;
+                });
+            }
+        }
+
+        // Accordion definitions data
+        const definitions = [
+            ["1. Avoided Utility Gen Cost (₱/yr)", "The purchase cost MERALCO saves by not buying expensive power from the WESM spot market during peak daylight hours when local prosumer solar generates energy."],
+            ["2. Avoided Line Losses (₱/yr)", "Energy saved on grid power losses. Since solar is generated and consumed locally on the same distribution line, MERALCO avoids 3%-6% system-wide transmission loss charges."],
+            ["3. Stranded Wire recovery (₱/yr)", "The systemic carrying charge. Stranded distribution network assets resulting from solar self-consumption are capitalized at MERALCO's 10.75% WACC, creating interest burden."],
+            ["4. Regressive Subsidy Index", "Fairness policy metric. Values > 1.0 warn that the solar model shifts grid carrying costs onto lifeline and low-income residential consumers who cannot afford solar panels."],
+            ["5. Wealth Shift delta (₱/yr)", "Socio-economic value shift. Evaluates standard public policy impact by subtracting cross-subsidies charged back to the public from the direct savings enjoyed by commercial prosumers."],
+            ["6. Lifeline Subsidy Break", "Social safety net capacity limit. Shows the solar penetration percentage at which funding for lifeline discounts collapses due to massive solar export shortfalls."],
+            ["7. Peaking Reserve Cost (₱/yr)", "Standby grid security cost. MERALCO must contract peaking plants (ancillary services) to manage solar drops from sudden cloud cover transits."],
+            ["8. Avoided Carbon Value (₱/yr)", "Green environmental offset. Valued using standard social cost of carbon factors (₱2.50 per kg of displaced CO2)."],
+            ["9. Grid Voltage Stress Index", "Engineering thermal rating from 1 to 10. Measures local transformer loading and line stress due to reverse solar exports."],
+            ["10. Equilibrium Tariff (₱/kWh)", "The theoretical 'Optimal Tariff'. Representing the price MERALCO should pay for solar exports where prosumer gets a fair payback but grid cross-subsidies are exactly zero."],
+            ["11. WESM Merit-Order Suppression Benefit", "Clearing price discount. Daylight solar injections displace expensive oil peaking plants on the spot market, lowering the overall WESM clearing price for all consumers."],
+            ["12. Feeder Hosting Capacity Stress Index", "Substation safety rating. Scale from 1 to 90. Measures the voltage thermal loading on local line regulators from massive reverse solar flows."],
+            ["13. Levelized Avoided Cost of Energy (LACOE)", "Energy offset valuation. The levelized cost savings from avoided generation and system losses per unit of solar export."],
+            ["14. Levelized Cost of Solar (LCOE)", "Prosumer generation unit-cost. Shows the lifetime levelized cost of producing solar power, including capital cost and WACC over a 25-year lifespan."],
+            ["15. Gini Coefficient Regressive Subsidy Shift Index", "Equity index. Tracks regional wealth inequality, showing if clean energy policies act as a regressive tax on poor families."],
+            ["16. Battery Storage Optimization Offset", "Battery offset value. Represents how co-located battery storage (BESS) reduces peak export surges, avoiding grid upgrade costs by 45%."],
+            ["17. Transformer Thermal Lifespan Offset", "Asset life saved. Calculates the years added to MERALCO transformers when local consumption keeps solar from causing local line overheating."],
+            ["18. Intermittency Reserve Surcharge", "Reserve backup surcharge. Standby ancillary charges loaded onto system sizing to maintain spinning reserves for solar transients."],
+            ["19. Socio-Economic Carbon Tax Credit", "Advanced green finance credit. Assumes green bond premium rates (₱3.75 per kg of avoided CO2 emissions)."],
+            ["20. Avoided Peak Capacity Reserve Benefit", "deferred CAPEX. Reflects the reduced necessity for constructing expensive gas-peaker power plants due to solar coincident peak contribution."]
+        ];
+
+        function populateGlossary() {
+            const container = document.getElementById("glossary-accordion-container");
+            container.innerHTML = "";
+            definitions.forEach((d, idx) => {
+                container.innerHTML += `
+                    <div class="glossary-card">
+                        <div class="glossary-term">
+                            <span class="glossary-index-badge">${idx + 1}</span>
+                            ${d[0]}
+                        </div>
+                        <div class="glossary-desc">${d[1]}</div>
+                    </div>
+                `;
+            });
+        }
+
+        // Section Tabs switcher
+        function switchTab(evt, tabId) {
+            const contents = document.querySelectorAll(".tab-content");
+            contents.forEach(c => c.classList.remove("active"));
+            
+            const buttons = document.querySelectorAll(".tab-btn");
+            buttons.forEach(b => b.classList.remove("active"));
+            
+            document.getElementById(tabId).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        // Initial Chart Setup and Dynamic Updates
+        function setupCharts() {
+            const ctx1 = document.getElementById('chartPayback').getContext('2d');
+            chartPayback = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: ['Uncapped DER', 'Capped & Tiered DER'],
+                    datasets: [{
+                        label: 'Years to Payback',
+                        data: [6.4, 4.6],
+                        backgroundColor: ['#1E293B', '#10B981'],
+                        borderColor: ['#0F172A', '#059669'],
+                        borderWidth: 1,
+                        barThickness: 50
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Years' },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            const ctx2 = document.getElementById('chartBurdenPen').getContext('2d');
+            chartBurdenPen = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: ['1%', '5%', '10%', '15%', '20%', '30%', '40%', '50%'],
+                    datasets: [{
+                        label: 'Franchise Grid Burden Shift (₱ Billions)',
+                        data: [3.6, 18.1, 36.3, 54.5, 72.7, 109.1, 145.4, 181.8],
+                        borderColor: '#EF4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            title: { display: true, text: '₱ Billions' },
+                            beginAtZero: true
+                        },
+                        x: {
+                            title: { display: true, text: 'Franchise Penetration (%)' }
+                        }
+                    }
+                }
+            });
+
+            const ctx3 = document.getElementById('chartBurdenCap').getContext('2d');
+            chartBurdenCap = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: ['30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'],
+                    datasets: [
+                        {
+                            label: 'Prosumer Savings (₱M)',
+                            data: [8.18, 7.86, 7.54, 7.21, 6.89, 6.57, 6.25, 5.93],
+                            backgroundColor: '#10B981'
+                        },
+                        {
+                            label: 'Systemic Grid Burden Shift (₱M)',
+                            data: [36.3, 48.4, 60.5, 72.7, 84.8, 96.9, 109.0, 121.2],
+                            backgroundColor: '#EF4444'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            title: { display: true, text: 'Regulatory Export Cap (Energy-Based, %)' }
+                        },
+                        y: {
+                            stacked: true,
+                            title: { display: true, text: 'Amount (₱ Millions)' }
+                        }
+                    }
+                }
+            });
+
+            const ctx4 = document.getElementById('chartReserveGen').getContext('2d');
+            chartReserveGen = new Chart(ctx4, {
+                type: 'bar',
+                data: {
+                    labels: ['30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'],
+                    datasets: [
+                        {
+                            label: 'Avoided Utility Gen Cost (₱M)',
+                            data: [2.0, 2.7, 3.4, 4.1, 4.7, 5.4, 6.1, 6.8],
+                            backgroundColor: '#EA580C'
+                        },
+                        {
+                            label: 'Ancillary Standby Peaking Reserve (₱M)',
+                            data: [0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55],
+                            backgroundColor: '#1E293B'
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Regulatory Export Cap (Energy-Based, %)' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Amount (₱ Millions)' }
+                        }
+                    }
+                }
+            });
+
+            const ctx5 = document.getElementById('chartTariffLcoe').getContext('2d');
+            chartTariffLcoe = new Chart(ctx5, {
+                type: 'line',
+                data: {
+                    labels: ['30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'],
+                    datasets: [
+                        {
+                            label: 'Equilibrium Tariff Rate (₱/kWh)',
+                            data: [10.74, 10.74, 10.74, 10.74, 10.74, 10.74, 10.74, 10.74],
+                            borderColor: '#1E293B',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Solar LCOE (₱/kWh)',
+                            data: [2.95, 2.95, 2.95, 2.95, 2.95, 2.95, 2.95, 2.95],
+                            borderColor: '#10B981',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Tariff / LCOE (₱/kWh)' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Regulatory Export Cap (Energy-Based, %)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCharts(uncappedPayback, cappedPayback, gen, size, retail, stranded, subsidy, compRate, capEx, solarGen, advO) {
+            if (!chartPayback) return;
+
+            // 1. Payback comparison
+            chartPayback.data.datasets[0].data = [uncappedPayback, cappedPayback];
+            chartPayback.update('none');
+
+            // 2. Grid burden across penetrations
+            const pens = [0.01, 0.05, 0.10, 0.15, 0.20, 0.30, 0.40, 0.50];
+            const capVal = parseFloat(slideCap.value) / 100.0;
+            const penBurdenData = pens.map(p => {
+                let fSolar = p * FranchiseDemand;
+                let sGen = (fSolar * (1 - capVal) * (retail - gen)) + (fSolar * capVal * (compRate - gen));
+                let sWires = fSolar * (1 - capVal) * stranded;
+                let sSub = fSolar * (1 - capVal) * subsidy;
+                return (sGen + sWires + sSub) / 1e9; // in Billions
+            });
+            chartBurdenPen.data.datasets[0].data = penBurdenData;
+            chartBurdenPen.update('none');
+
+            // 3. Prosumer savings vs grid burden across cap steps (30% to 100%)
+            const capsList = [0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.00];
+            const penVal = parseFloat(slidePen.value) / 100.0;
+
+            const savingsSteps = capsList.map(c => {
+                return ((solarGen * (1 - c) * retail) + (solarGen * c * compRate)) / 1e6; // in Millions
+            });
+            const burdenSteps = capsList.map(c => {
+                let fSolar = penVal * FranchiseDemand;
+                let sGen = (fSolar * (1 - c) * (retail - gen)) + (fSolar * c * (compRate - gen));
+                let sWires = fSolar * (1 - c) * stranded;
+                let sSub = fSolar * (1 - c) * subsidy;
+                return (sGen + sWires + sSub) / 1e6; // in Millions
+            });
+            chartBurdenCap.data.datasets[0].data = savingsSteps;
+            chartBurdenCap.data.datasets[1].data = burdenSteps;
+            chartBurdenCap.update('none');
+
+            // 4. Avoided gen vs standby reserves across caps
+            const avoidedGenSteps = capsList.map(c => {
+                // CappedExport * WESM Spot Rate (B25 is 9.85) / 1e6
+                let cappedExport = solarGen * c;
+                return (cappedExport * 9.85) / 1e6; 
+            });
+            const reservesSteps = capsList.map(c => {
+                // Standby reserves peaking cost (E4 * B29 * (1 - B21))
+                return (size * AncillaryPeakingReserve * (1 - SolarCapacityFactor)) / 1e6;
+            });
+            chartReserveGen.data.datasets[0].data = avoidedGenSteps;
+            chartReserveGen.data.datasets[1].data = reservesSteps;
+            chartReserveGen.update('none');
+
+            // 5. Equilibrium tariff vs solar LCOE across caps
+            const eqTariffSteps = capsList.map(c => {
+                // GenRate + AvoidedPeak - HostingBurden (Parameters!B2 + Parameters!B30 - Parameters!B31)
+                return gen + AvoidedPeakGenBenefit - SystemHostingBurden;
+            });
+            const lcoeSteps = capsList.map(c => {
+                return advO;
+            });
+            chartTariffLcoe.data.datasets[0].data = eqTariffSteps;
+            chartTariffLcoe.data.datasets[1].data = lcoeSteps;
+            chartTariffLcoe.update('none');
+        }
+
+        // Attach event listeners to sliders
+        [slideSize, slideCap, slideGen, slidePen].forEach(slider => {
+            slider.addEventListener("input", runSimulation);
+        });
+
+        // Initialize App
+        window.addEventListener("DOMContentLoaded", () => {
+            populateGlossary();
+            setupCharts();
+            runSimulation();
+        });
+    </script>
+</body>
+</html>
